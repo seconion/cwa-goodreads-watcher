@@ -1,0 +1,33 @@
+services:
+  cwa-downloader:
+    image: ghcr.io/calibrain/calibre-web-automated-book-downloader:latest
+    container_name: cwa-downloader
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    ports:
+      - 8084:8084
+    volumes:
+      - ./cwa-config:/config
+      - ./downloads:/cwa-book-ingest
+    restart: unless-stopped
+
+  goodreads-watcher:
+    image: python:3.11-slim
+    container_name: goodreads-watcher
+    depends_on:
+      - cwa-downloader
+    environment:
+      - GOODREADS_RSS_URL=${GOODREADS_RSS_URL}
+      - POLL_INTERVAL=${POLL_INTERVAL:-3600}
+      - CWA_URL=http://cwa-downloader:8084
+      - CWA_USER=${CWA_USER}
+      - CWA_PASS=${CWA_PASS}
+    volumes:
+      - ./watcher.py:/app/watcher.py:ro
+      - ./data/goodreads_watcher:/data
+    working_dir: /app
+    entrypoint: >
+      bash -c "pip install requests beautifulsoup4 && python3 /app/watcher.py"
+    restart: unless-stopped

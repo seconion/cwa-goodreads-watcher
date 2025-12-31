@@ -1,0 +1,17 @@
+services:
+  goodreads-watcher:
+    image: python:3.11-slim
+    container_name: goodreads-watcher
+    environment:
+      - GOODREADS_RSS_URL=${GOODREADS_RSS_URL}
+      - POLL_INTERVAL=${POLL_INTERVAL:-3600}
+      - CWA_URL=${CWA_URL}
+      - CWA_USER=${CWA_USER}
+      - CWA_PASS=${CWA_PASS}
+    volumes:
+      - ./watcher.py:/app/watcher.py:ro
+      - ./data/goodreads_watcher:/data
+    working_dir: /app
+    entrypoint: >
+      bash -c "pip install requests beautifulsoup4 && python3 /app/watcher.py"
+    restart: unless-stopped
